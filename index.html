@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pumkinpie Arcade</title>
+<link rel="icon" type="image/x-icon" href="pie.ico">
+
+<style>
+body {
+  margin:0;
+  font-family: Inter, system-ui, -apple-system;
+  scroll-behavior: smooth;
+  background: linear-gradient(135deg, #ff3d81, #6a0dad, #0f1724);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  color: white;
+}
+@keyframes gradientBG {
+  0% {background-position:0% 50%;}
+  50% {background-position:100% 50%;}
+  100% {background-position:0% 50%;}
+}
+section {padding: 100px 20px; text-align: center;}
+h1 {font-size: 48px; margin-bottom: 10px; text-shadow:0 0 12px #ff3d81, 0 0 24px #ffcc00;}
+.subtitle {font-size: 16px; margin-bottom: 50px; color: #ffd700; text-shadow:0 0 8px #ff3d81;}
+.games {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 30px;
+  max-width: 1000px;
+  margin: auto;
+}
+.bubble {
+  background: radial-gradient(circle, rgba(255,255,255,0.3), rgba(255,255,255,0.05));
+  border: 2px solid rgba(255,255,255,0.2);
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.4s ease, box-shadow 0.3s ease;
+  backdrop-filter: blur(12px);
+  margin: auto;
+  box-shadow: 0 8px 24px rgba(255,0,128,0.4);
+}
+.bubble:hover {transform: scale(1.15) rotate(-3deg); box-shadow:0 16px 36px rgba(255,0,128,0.6);}
+.bubble:active {transform: scale(0.9) rotate(-10deg); box-shadow:0 12px 28px rgba(255,0,128,0.7);}
+.toolbar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  border:1px solid rgba(255,255,255,0.2);
+  display: flex;
+  gap:12px;
+  padding: 12px 20px;
+  border-radius: 40px;
+  box-shadow: 0 8px 24px rgba(255,0,128,0.5);
+}
+.toolbar button {
+  background: rgba(255,255,255,0.2);
+  border:none;
+  padding:10px 14px;
+  border-radius: 50%;
+  cursor:pointer;
+  font-size:18px;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+.toolbar button:active {transform: scale(0.8) rotate(-8deg);}
+body.light-mode {background: linear-gradient(135deg, #f8fafc, #d1d5db, #a1a1a1); color:#111827; animation: gradientBG 15s ease infinite;}
+body.light-mode .bubble {background: rgba(0,0,0,0.1); color:black; border-color: rgba(0,0,0,0.2); box-shadow:0 8px 24px rgba(0,0,0,0.3);}
+body.light-mode .toolbar {background: rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.2); box-shadow:0 8px 24px rgba(0,0,0,0.35);}
+body.light-mode .toolbar button {background: rgba(0,0,0,0.15); color:black;}
+.credits {background: rgba(0,0,0,0.2); padding:50px; border-radius: 20px; max-width: 800px; margin:auto; margin-bottom:100px;}
+</style>
+</head>
+<body>
+
+<section id="home">
+  <h1>🎮 Pumkinpie Arcade</h1>
+  <p class="subtitle">Made by <b>Pumkinpie the Germinator</b> — pick a gamemode</p>
+  <div class="games">
+    <div class="bubble" onclick="openGame('whack.html')">Wak-A-Mole</div>
+    <div class="bubble" onclick="openGame('tic.html')">Tic Tac Toe vs Bot</div>
+    <div class="bubble" onclick="openGame('memory.html')">Memory Game</div>
+    <div class="bubble" onclick="openGame('collision.html')">Collision</div>
+  </div>
+</section>
+
+<section id="credits">
+  <h1>Credits</h1>
+  <div class="credits">
+    <p>Made by <b>Pumkinpie the Germinator</b></p>
+    <p>Special thanks to friends & contributors.</p>
+    <p>Redflex,Larlaser,Selenaaaa,Icyy,Swedish</p>
+  </div>
+</section>
+
+<div class="toolbar">
+  <button onclick="toggleTheme()" id="themeToggle">🌙</button>
+  <button onclick="scrollToCredits()">📜</button>
+</div>
+
+<script>
+function toggleTheme(){
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  themeToggle.textContent = isLight ? '☀️' : '🌙';
+}
+if(localStorage.getItem('theme')==='light'){
+  document.body.classList.add('light-mode');
+  themeToggle.textContent='☀️';
+}
+function scrollToCredits(){
+  document.getElementById('credits').scrollIntoView({behavior:'smooth'});
+}
+function openGame(url){
+  window.open(url,'_blank');
+}
+</script>
+
+</body>
+</html>
