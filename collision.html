@@ -1,83 +1,342 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Collision Game</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <link rel="icon" type="image/x-icon" href="pie.ico">
+<title>Collision — Pumkinpie Arcade</title>
 <style>
-body{margin:0;overflow:hidden;background:#0f1724;}
-canvas{display:block;margin:0 auto;background:#111;}
-.score{position:absolute;top:20px;left:50%;transform:translateX(-50%);color:white;font-family:sans-serif;font-size:24px;}
+:root{
+  --bg1:#00121a;
+  --bg2:#002834;
+  --neon:#00e5ff;
+  --neon-weak:rgba(0,229,255,0.12);
+  --glass:rgba(255,255,255,0.04);
+  --panel-bg: rgba(255,255,255,0.02);
+  --text-light:#e8fbff;
+  --text-dark:#111;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system}
+body{
+  background: radial-gradient(1200px 600px at 10% 10%, #01232e 0%, var(--bg1) 25%, var(--bg2) 100%);
+  color:var(--text-light);
+  display:flex;align-items:center;justify-content:center;padding:28px;overflow:hidden;
+  transition: all 0.5s ease;
+}
+body.light-mode{
+  background: radial-gradient(1200px 600px at 10% 10%, #f2f2f2 0%, #e6e6e6 25%, #cccccc 100%);
+  color:var(--text-dark);
+}
+.container{width:100%;max-width:1100px;min-height:640px;border-radius:20px;padding:18px;position:relative;display:flex;flex-direction:column;gap:14px;background:linear-gradient(180deg, var(--panel-bg), transparent);box-shadow:0 20px 60px rgba(3,10,18,0.7);border:1px solid rgba(255,255,255,0.03);overflow:hidden;transition: all 0.5s ease;}
+body.light-mode .container{box-shadow:0 10px 30px rgba(0,0,0,0.15);border:1px solid rgba(0,0,0,0.1);}
+.header{display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,#00e5ff,#7efcff);display:flex;align-items:center;justify-content:center;font-weight:800;color:#012;box-shadow:0 6px 18px rgba(0,229,255,0.08) inset;transition: all 0.5s ease;}
+body.light-mode .logo{background:linear-gradient(135deg,#ff9f00,#ffdf00);color:#111;box-shadow:0 6px 18px rgba(0,0,0,0.08) inset;}
+.title{font-size:20px;font-weight:800}
+.toolbar{margin-left:auto;display:flex;gap:10px;align-items:center}
+.toolbar button{background:var(--glass);border:1px solid rgba(255,255,255,0.04);padding:10px 12px;border-radius:12px;color:var(--neon);cursor:pointer;backdrop-filter:blur(6px);font-weight:700;transition:all 0.3s ease;}
+.toolbar button:active{transform:scale(.96)}
+body.light-mode .toolbar button{color:#111;border:1px solid rgba(0,0,0,0.1);backdrop-filter:blur(3px);}
+.main{display:flex;gap:20px;flex:1;align-items:stretch}
+.gameArea{flex:1;position:relative;border-radius:14px;background:linear-gradient(180deg, rgba(0,229,255,0.02), rgba(255,255,255,0.01));border:1px solid var(--neon-weak);overflow:hidden;box-shadow:0 12px 40px rgba(0,229,255,0.02) inset;transition: all 0.5s ease;}
+body.light-mode .gameArea{background:linear-gradient(180deg, rgba(0,0,0,0.01), rgba(0,0,0,0.0));border:1px solid rgba(0,0,0,0.08);box-shadow:0 8px 20px rgba(0,0,0,0.03) inset;}
+.canvasWrap{position:absolute;inset:0}
+.canvas{width:100%;height:100%;display:block}
+.hud{position:absolute;left:18px;top:18px;display:flex;flex-direction:column;gap:10px}
+.bubbleUI{padding:10px 14px;border-radius:999px;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));border:1px solid rgba(0,229,255,0.12);box-shadow:0 8px 22px rgba(0,229,255,0.06);font-weight:800;color:var(--neon);transition: all 0.5s ease;}
+body.light-mode .bubbleUI{color:#111;border:1px solid rgba(0,0,0,0.12);background:rgba(255,255,255,0.05);box-shadow:0 8px 20px rgba(0,0,0,0.03);}
+.rightPanel{width:320px;display:flex;flex-direction:column;gap:12px}
+.panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.03);transition: all 0.5s ease;}
+body.light-mode .panel{background:rgba(255,255,255,0.12);border:1px solid rgba(0,0,0,0.1);}
+.controls{display:flex;gap:8px;align-items:center}
+.label{font-size:13px;color:rgba(255,255,255,0.75)}
+body.light-mode .label{color:#333;}
+.selectCool{appearance:none;background:linear-gradient(90deg,#00e5ff,#00ff9d);border:none;color:#012;font-weight:700;padding:8px 12px;border-radius:12px;cursor:pointer;transition:all 0.3s ease;}
+.selectCool:hover{filter:brightness(1.2);}
+.selectCool option{background:#01232e;color:#e8fbff;}
+body.light-mode .selectCool{background:linear-gradient(90deg,#ffdf00,#ff9f00);color:#111;}
+#gameOverScreen{position:absolute;inset:0;background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;font-weight:900;font-size:48px;border-radius:20px;z-index:50;display:none;}
+#gameOverScreen span{padding:20px 36px;border-radius:30px;background:linear-gradient(45deg,#ff0055,#00e5ff,#00ff9d,#fffb00,#ff00ff);background-size:400% 400%;animation:rainbow 4s linear infinite;}
+@keyframes rainbow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@media (max-width:980px){.rightPanel{display:none}.container{padding:12px}}
 </style>
 </head>
 <body>
-<div class="score">Time: 0</div>
-<canvas id="gameCanvas"></canvas>
+  <div class="container" role="application">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">PI</div>
+        <div>
+          <div class="title">Collision — Neon Edition</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.65)">Avoid colliding balls. Survive as long as you can.</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button id="backBtn">← Home</button>
+        <button id="themeBtn">🌙</button>
+        <button id="startBtn" class="neonPulse">Start</button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="gameArea" id="gameArea">
+        <div class="canvasWrap">
+          <canvas id="gameCanvas" class="canvas"></canvas>
+        </div>
+        <div class="hud">
+          <div class="bubbleUI" id="scoreUI">Time: 0s</div>
+          <div class="bubbleUI" id="livesUI">Lives: 3</div>
+        </div>
+        <div id="gameOverScreen"><span id="gameOverText">You Died!<br/>Survived 0s</span></div>
+      </div>
+
+      <div class="rightPanel">
+        <div class="panel">
+          <div class="label">Settings</div>
+          <div style="height:8px"></div>
+          <div class="controls">
+            <div class="label">Difficulty:</div>
+            <select id="difficulty" class="selectCool">
+              <option value="easy">Easy</option>
+              <option value="normal" selected>Normal</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+          <div style="height:8px"></div>
+          <div class="controls">
+            <div class="label">Spawn Rate:</div>
+            <input id="spawnRange" type="range" min="300" max="1400" step="50" value="900" />
+          </div>
+          <div class="footerHint">Use mouse or arrow keys to move your neon ball. Tap Start to begin.</div>
+        </div>
+
+        <div class="panel">
+          <div class="label">Leaderboard (session)</div>
+          <div id="log" style="margin-top:8px;font-size:13px;color:rgba(255,255,255,0.85);max-height:200px;overflow:auto"></div>
+        </div>
+
+        <div class="panel">
+          <div class="label">About</div>
+          <div style="margin-top:8px;font-size:13px;color:rgba(255,255,255,0.8)">Neon Collision — powered by Pumkinpie Arcade. Ice-Neon theme.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <script>
+/* ===== game variables and setup ===== */
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const gameArea = document.getElementById('gameArea');
+const gameOverScreen = document.getElementById('gameOverScreen');
+const gameOverText = document.getElementById('gameOverText');
+let W, H;
+function resize(){ W = gameArea.clientWidth; H = gameArea.clientHeight; canvas.width = W; canvas.height = H; }
+window.addEventListener('resize', resize);
+resize();
 
-let player = {x: canvas.width/2, y: canvas.height/2, radius:20, color:'cyan'};
+const player = { x: W/2, y: H/2, r: 14, vx:0, vy:0, speed:5, color:'rgba(0,229,255,0.95)' };
+let mouse = { x: player.x, y: player.y };
+let keys = {};
 let enemies = [];
+let spawnInterval = Number(document.getElementById('spawnRange').value) || 900;
+let lastSpawn = 0;
+let running = false;
+let startTime = 0;
 let score = 0;
-let gameOver = false;
+let lives = 3;
+const logEl = document.getElementById('log');
 
-function spawnEnemy(){
-    const radius = 15 + Math.random()*10;
-    const x = Math.random()*(canvas.width - 2*radius) + radius;
-    const y = Math.random()*(canvas.height - 2*radius) + radius;
-    const dx = (Math.random()-0.5)*4;
-    const dy = (Math.random()-0.5)*4;
-    enemies.push({x,y,dx,dy,radius,color:'red'});
-}
+const scoreUI = document.getElementById('scoreUI');
+const livesUI = document.getElementById('livesUI');
+const spawnRange = document.getElementById('spawnRange');
+const difficulty = document.getElementById('difficulty');
 
-function update(){
-    if(gameOver) return;
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    
-    // Draw player
-    ctx.beginPath();
-    ctx.arc(player.x,player.y,player.radius,0,Math.PI*2);
-    ctx.fillStyle = player.color;
-    ctx.fill();
-    
-    // Draw enemies and move
-    enemies.forEach(e=>{
-        e.x += e.dx;
-        e.y += e.dy;
-        if(e.x<e.radius||e.x>canvas.width-e.radius) e.dx*=-1;
-        if(e.y<e.radius||e.y>canvas.height-e.radius) e.dy*=-1;
-        ctx.beginPath();
-        ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
-        ctx.fillStyle=e.color;
-        ctx.fill();
-        
-        // Collision detection
-        const dist = Math.hypot(player.x - e.x, player.y - e.y);
-        if(dist < player.radius + e.radius){
-            gameOver=true;
-            alert('Game Over! Time survived: '+Math.floor(score)+'s');
-        }
-    });
-    
-    requestAnimationFrame(update);
-}
-update();
-
-// Spawn enemies every 1s
-setInterval(()=>{ if(!gameOver) spawnEnemy(); }, 1000);
-
-// Score counter
-setInterval(()=>{ if(!gameOver) { score+=0.1; document.querySelector('.score').textContent = 'Time: '+Math.floor(score); }}, 100);
-
-// Player movement
-document.addEventListener('mousemove', e=>{
-    player.x=e.clientX;
-    player.y=e.clientY;
+/* ===== UI bindings ===== */
+spawnRange.addEventListener('input', ()=> { spawnInterval = Number(spawnRange.value); });
+difficulty.addEventListener('change', ()=> {
+  const d = difficulty.value;
+  if (d === 'easy') spawnInterval = 1200;
+  if (d === 'normal') spawnInterval = 900;
+  if (d === 'hard') spawnInterval = 550;
+  spawnRange.value = spawnInterval;
 });
+
+/* input */
+gameArea.addEventListener('mousemove', (e) => {
+  const r = gameArea.getBoundingClientRect();
+  mouse.x = e.clientX - r.left;
+  mouse.y = e.clientY - r.top;
+});
+window.addEventListener('keydown', (e) => { keys[e.key] = true; });
+window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+
+/* helpers */
+function rand(min,max){ return Math.random()*(max-min)+min; }
+function spawnEnemy(){
+  const edge = Math.floor(Math.random()*4);
+  const r = rand(8,22);
+  let x,y;
+  if(edge===0){ x = -r; y = rand(0,H); }
+  else if(edge===1){ x = W + r; y = rand(0,H); }
+  else if(edge===2){ x = rand(0,W); y = -r; }
+  else { x = rand(0,W); y = H + r; }
+  const angle = Math.atan2(player.y - y, player.x - x) + rand(-0.8,0.8);
+  const speed = rand(1.2,2.6) * (difficulty.value==='hard' ? 1.5 : (difficulty.value==='easy' ? 0.7 : 1));
+  const dx = Math.cos(angle)*speed;
+  const dy = Math.sin(angle)*speed;
+  enemies.push({ x, y, dx, dy, r, color:'rgba(0,229,255,0.9)', trail: [] });
+}
+
+/* ===== update & draw loop ===== */
+function update(dt){
+  if(!running) return;
+  // player smoothing movement to mouse
+  player.x += (mouse.x - player.x) * 0.18;
+  player.y += (mouse.y - player.y) * 0.18;
+  // keyboard nudges
+  if(keys['ArrowUp'] || keys['w']) player.y -= player.speed;
+  if(keys['ArrowDown'] || keys['s']) player.y += player.speed;
+  if(keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
+  if(keys['ArrowRight'] || keys['d']) player.x += player.speed;
+  // clamp
+  player.x = Math.max(player.r, Math.min(W - player.r, player.x));
+  player.y = Math.max(player.r, Math.min(H - player.r, player.y));
+
+  // spawn
+  if(performance.now() - lastSpawn > spawnInterval){
+    spawnEnemy();
+    lastSpawn = performance.now();
+  }
+
+  // enemies update
+  for(let i = enemies.length - 1; i >= 0; i--){
+    const e = enemies[i];
+    e.x += e.dx; e.y += e.dy;
+    // remove if off-screen far
+    if(e.x < -50 || e.x > W + 50 || e.y < -50 || e.y > H + 50){ enemies.splice(i,1); continue; }
+    // trail
+    e.trail.push({ x: e.x, y: e.y, alpha: 1 });
+    if(e.trail.length > 12) e.trail.shift();
+    // collision
+    const dist = Math.hypot(e.x - player.x, e.y - player.y);
+    if(dist < e.r + player.r){
+      enemies.splice(i,1);
+      lives -= 1;
+      addLog('Hit! Lives left: ' + lives);
+      livesUI.textContent = 'Lives: ' + lives;
+      if(lives <= 0){ endGame(); return; }
+    }
+  }
+
+  // score
+  score = Math.max(0, Math.floor((performance.now() - startTime) / 1000));
+  scoreUI.textContent = 'Time: ' + score + 's';
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+
+  // draw simple neon glows and trails
+  drawGlow(player.x, player.y, 48, 'rgba(0,229,255,0.06)');
+  enemies.forEach(e => {
+    // trails
+    for(let t=0;t<e.trail.length;t++){
+      const p = e.trail[t];
+      const a = (t+1)/e.trail.length * 0.7;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, Math.max(1, e.r * (t/e.trail.length)), 0, Math.PI*2);
+      ctx.fillStyle = `rgba(0,229,255,${a*0.18})`;
+      ctx.fill();
+    }
+    // enemy glow & body
+    drawGlow(e.x, e.y, e.r * 3.6, 'rgba(0,229,255,0.06)');
+    ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2);
+    ctx.fillStyle = e.color; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.stroke();
+  });
+
+  // player
+  drawGlow(player.x, player.y, player.r*3.8, 'rgba(0,255,255,0.12)');
+  ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI*2);
+  ctx.fillStyle = player.color; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1; ctx.stroke();
+}
+
+function drawGlow(x,y,size,color){
+  const gradient = ctx.createRadialGradient(x,y,0,x,y,size);
+  gradient.addColorStop(0, color);
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.fillStyle = gradient; ctx.arc(x,y,size,0,Math.PI*2); ctx.fill();
+}
+
+let last = performance.now();
+function loop(){
+  const now = performance.now();
+  const dt = now - last;
+  last = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+/* ===== controls ===== */
+function startGame(){
+  // reset & start
+  enemies = [];
+  lives = 3;
+  score = 0;
+  startTime = performance.now();
+  lastSpawn = performance.now();
+  running = true;
+  gameOverScreen.style.display = 'none';
+  document.getElementById('startBtn').textContent = 'Restart';
+  livesUI.textContent = 'Lives: ' + lives;
+  scoreUI.textContent = 'Time: 0s';
+  addLog('Game started');
+  // ensure canvas size up-to-date
+  resize();
+}
+
+function endGame(){
+  running = false;
+  gameOverScreen.style.display = 'flex';
+  gameOverText.innerHTML = `You Died!<br/>Survived ${score}s`;
+  addLog('Game over — survived ' + score + 's');
+}
+
+/* logging helper (fixed) */
+function addLog(t){
+  const d = document.createElement('div');
+  d.textContent = `[${new Date().toLocaleTimeString()}] ${t}`;
+  logEl.prepend(d);
+  // keep recent 40 entries
+  while(logEl.children.length > 40){
+    logEl.removeChild(logEl.lastChild);
+  }
+}
+
+/* toolbar actions */
+document.getElementById('startBtn').addEventListener('click', ()=> { startGame(); });
+document.getElementById('backBtn').addEventListener('click', ()=> { window.close(); });
+
+/* theme toggle */
+const themeBtn = document.getElementById('themeBtn');
+let light = false;
+themeBtn.addEventListener('click', ()=> {
+  light = !light;
+  document.body.classList.toggle('light-mode', light);
+  // small visual tweak for neon color in light mode
+  if(light){ document.documentElement.style.setProperty('--neon','#00aaff'); }
+});
+
+/* begin main loop */
+loop();
+
+/* ensure initial canvas size is correct after layout */
+setTimeout(resize, 120);
 </script>
 </body>
 </html>

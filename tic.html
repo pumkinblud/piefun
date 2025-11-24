@@ -1,58 +1,169 @@
+<!-- TIC TAC TOE (tic.html) -->
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tic Tac Toe vs Bot</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tic Tac Toe — Pumkinpie Arcade</title>
 <link rel="icon" type="image/x-icon" href="pie.ico">
 <style>
-body{margin:0;background:#0f1724;color:white;font-family:Inter,system-ui;text-align:center;}
-h1{margin-top:40px;margin-bottom:20px;}
-.grid{display:grid;grid-template-columns:repeat(3,100px);grid-gap:10px;margin:50px auto;width:330px;}
-.cell{width:100px;height:100px;background:rgba(255,255,255,0.05);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:36px;cursor:pointer;}
-.cell.taken{cursor:not-allowed;}
+:root{--bg1:#00121a;--bg2:#002834;--neon:#00e5ff;--panel-bg:rgba(255,255,255,0.02);--text-light:#e8fbff}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system}
+body{background:radial-gradient(1200px 600px at 10% 10%,#01232e 0%,var(--bg1) 25%,var(--bg2) 100%);color:var(--text-light);display:flex;align-items:center;justify-content:center;padding:28px;}
+.container{width:100%;max-width:1100px;min-height:640px;border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:14px;background:linear-gradient(180deg,var(--panel-bg),transparent);border:1px solid rgba(255,255,255,0.03);}
+.header{display:flex;align-items:center;gap:12px}
+.logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,#00e5ff,#7efcff);display:flex;align-items:center;justify-content:center;font-weight:800;color:#012}
+.title{font-size:20px;font-weight:800}
+.toolbar{margin-left:auto;display:flex;gap:10px;align-items:center}
+.toolbar button{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:12px;color:var(--neon);cursor:pointer}
+.main{display:flex;gap:20px;flex:1}
+.boardWrap{flex:1;display:flex;align-items:center;justify-content:center}
+.board{display:grid;grid-template-columns:repeat(3,140px);grid-gap:14px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:24px;border-radius:16px;border:1px solid rgba(255,255,255,0.03)}
+.cell{width:140px;height:140px;border-radius:12px;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;font-size:64px;cursor:pointer;user-select:none}
+.cell:hover{transform:scale(1.03)}
+.rightPanel{width:320px;display:flex;flex-direction:column;gap:12px}
+.panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+.small{font-size:13px}
+#status{font-weight:800;font-size:18px;margin-bottom:8px}
+.btn{background:linear-gradient(90deg,#00e5ff,#00ff9d);border:none;padding:10px 12px;border-radius:10px;color:#012;font-weight:800;cursor:pointer}
+.gridLabel{font-size:13px;color:rgba(255,255,255,0.8)}
+.light-mode .cell{background:rgba(0,0,0,0.06);color:#111}
+@media (max-width:900px){.board{grid-template-columns:repeat(3,88px);}.cell{width:88px;height:88px;font-size:36px}}
 </style>
 </head>
 <body>
-<h1>Tic Tac Toe vs Bot</h1>
-<div class="grid" id="grid"></div>
+<div class="container">
+  <div class="header">
+    <div style="display:flex;gap:12px;align-items:center"><div class="logo">PI</div><div><div class="title">Tic Tac Toe — Neon</div><div style="font-size:12px;color:rgba(255,255,255,0.7)">Play vs an AI bot</div></div></div>
+    <div class="toolbar"><button id="homeBtn">← Home</button><button id="themeBtn">🌙</button></div>
+  </div>
+  <div class="main">
+    <div class="boardWrap">
+      <div>
+        <div id="status">Your turn — X</div>
+        <div class="board" id="board"></div>
+        <div style="margin-top:12px;display:flex;gap:8px"><button id="resetBtn" class="btn">Reset</button><button id="undoBtn" class="btn">Undo</button></div>
+      </div>
+    </div>
+    <div class="rightPanel">
+      <div class="panel">
+        <div class="small">Settings</div>
+        <div style="height:8px"></div>
+        <div class="gridLabel">Bot difficulty</div>
+        <select id="aiDifficulty" class="small" style="padding:8px;border-radius:8px;margin-top:8px">
+          <option value="easy">Easy</option>
+          <option value="normal" selected>Normal</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+      <div class="panel">
+        <div class="small">Leaderboard (session)</div>
+        <div id="log" style="margin-top:8px;max-height:200px;overflow:auto;font-size:13px;color:rgba(255,255,255,0.9)"></div>
+      </div>
+      <div class="panel small">About<br/>Neon Tic Tac Toe — Pumkinpie Arcade</div>
+    </div>
+  </div>
+</div>
 <script>
-const gridTTT=document.getElementById('grid');
-let board=["","","","","","","","",""];
-const cells=[];
-let player='X';
-function checkWin(){
-const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-for(const combo of wins){
-if(board[combo[0]] && board[combo[0]]===board[combo[1]] && board[combo[1]]===board[combo[2]]){
-alert(`${board[combo[0]]} wins!`);
-board.fill(""); cells.forEach(c=>c.textContent='');
+// Tic Tac Toe logic
+const boardEl = document.getElementById('board');
+const statusEl = document.getElementById('status');
+const aiDifficulty = document.getElementById('aiDifficulty');
+const log = document.getElementById('log');
+let board = Array(9).fill('');
+let player = 'X';
+let bot = 'O';
+let history = [];
+
+function renderBoard(){
+  boardEl.innerHTML = '';
+  board.forEach((v,i)=>{
+    const cell = document.createElement('div');
+    cell.className='cell';
+    cell.textContent = v;
+    cell.addEventListener('click', ()=> onCell(i));
+    boardEl.appendChild(cell);
+  });
 }
+
+function onCell(i){
+  if(board[i] || checkWinner(board) || !player) return;
+  board[i]=player; history.push(board.slice()); renderBoard();
+  const winner = checkWinner(board);
+  if(winner){ endRound(winner); return; }
+  // bot move
+  setTimeout(()=>{ botMove(); }, 350);
 }
-}
-for(let i=0;i<9;i++){
-const cell=document.createElement('div');
-cell.className='cell';
-cell.addEventListener('click',()=>{
-if(board[i]!="") return;
-board[i]=player; cell.textContent=player;
-checkWin();
-player='O';
-botMove();
-});
-gridTTT.appendChild(cell);
-cells.push(cell);
-}
+
 function botMove(){
-let empty=[];
-board.forEach((c,i)=>{if(c=='') empty.push(i);});
-if(empty.length===0){player='X'; return;}
-const choice=empty[Math.floor(Math.random()*empty.length)];
-board[choice]='O';
-cells[choice].textContent='O';
-checkWin();
-player='X';
+  if(checkWinner(board)) return;
+  const difficulty = aiDifficulty.value;
+  let choice;
+  if(difficulty==='easy'){
+    const empties = board.map((v,i)=>v===''?i:-1).filter(i=>i>=0);
+    choice = empties[Math.floor(Math.random()*empties.length)];
+  } else if(difficulty==='normal'){
+    // try win, block, else random
+    choice = findBestMove(board, bot) || findBestMove(board, player) || randomEmpty(board);
+  } else {
+    // hard: minimax
+    choice = minimaxChoose(board, bot).index;
+  }
+  if(choice===undefined) return;
+  board[choice]=bot; history.push(board.slice()); renderBoard();
+  const winner = checkWinner(board);
+  if(winner){ endRound(winner); }
 }
+
+function findBestMove(b, p){
+  for(let i=0;i<9;i++){ if(b[i]==''){ const tmp=b.slice(); tmp[i]=p; if(checkWinner(tmp)===p) return i; }}
+  return null;
+}
+function randomEmpty(b){ const empties=b.map((v,i)=>v===''?i:-1).filter(i=>i>=0); return empties[Math.floor(Math.random()*empties.length)]; }
+
+function checkWinner(b){
+  const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for(const w of wins){ if(b[w[0]] && b[w[0]]===b[w[1]] && b[w[1]]===b[w[2]]) return b[w[0]]; }
+  if(b.every(x=>x)) return 'draw';
+  return null;
+}
+
+function endRound(winner){
+  if(winner==='draw'){ statusEl.textContent='Draw!'; addLog('Round: Draw'); }
+  else if(winner===player){ statusEl.textContent='You win!'; addLog('Round: You win'); }
+  else { statusEl.textContent='Bot wins!'; addLog('Round: Bot wins'); }
+  // simple reset after short delay
+  setTimeout(()=>{ resetBoard(); }, 1400);
+}
+
+function resetBoard(){ board=Array(9).fill(''); history=[]; renderBoard(); statusEl.textContent='Your turn — X'; }
+
+function undo(){ if(history.length>1){ history.pop(); board=history[history.length-1].slice(); renderBoard(); }}
+
+// simple minimax for hard
+function minimaxChoose(b, playerTurn){
+  const avail = b.map((v,i)=>v===''?i:-1).filter(i=>i>=0);
+  const winner = checkWinner(b); if(winner) return {score: winner===bot?10: winner===player?-10:0};
+  const moves = [];
+  for(const i of avail){ const newB=b.slice(); newB[i]=playerTurn; const result = minimaxChoose(newB, playerTurn===bot?player:bot); moves.push({index:i, score: result.score}); }
+  if(playerTurn===bot){ // maximize
+    let best = moves.reduce((a,b)=> a.score>b.score?a:b); return best; }
+  else { let best = moves.reduce((a,b)=> a.score<b.score?a:b); return best; }
+}
+
+function addLog(t){ const d=document.createElement('div'); d.textContent=`[${new Date().toLocaleTimeString()}] ${t}`; log.prepend(d); while(log.children.length>40) log.removeChild(log.lastChild); }
+
+// UI buttons
+document.getElementById('resetBtn').addEventListener('click', ()=> resetBoard());
+document.getElementById('undoBtn').addEventListener('click', ()=> undo());
+document.getElementById('homeBtn').addEventListener('click', ()=> window.close());
+document.getElementById('themeBtn').addEventListener('click', ()=> document.body.classList.toggle('light-mode'));
+
+// init
+resetBoard();
 </script>
 </body>
 </html>
+
+

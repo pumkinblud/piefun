@@ -1,48 +1,79 @@
-
+<!-- WHACK-A-MOLE (whack.html) -->
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Whack-A-Mole</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Whack-A-Mole — Pumkinpie Arcade</title>
 <link rel="icon" type="image/x-icon" href="pie.ico">
 <style>
-body{margin:0;background:#0f1724;color:white;font-family:Inter,system-ui;text-align:center;}
-h1{margin-top:40px;}
-.grid{display:grid;grid-template-columns:repeat(3,80px);grid-gap:10px;margin:50px auto;width:270px;}
-.hole{width:80px;height:80px;background:rgba(255,255,255,0.05);border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s;}
-.hole.active{background:#ffcc00;color:#071226;font-weight:700;}
-.score{font-size:24px;margin-top:20px;}
+:root{--bg1:#00121a;--bg2:#002834;--neon:#00e5ff}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system}
+body{background:radial-gradient(1200px 600px at 10% 10%,#01232e 0%,var(--bg1) 25%,var(--bg2) 100%);color:#e8fbff;display:flex;align-items:center;justify-content:center;padding:28px}
+.container{width:100%;max-width:1100px;min-height:640px;border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:14px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border:1px solid rgba(255,255,255,0.03)}
+.header{display:flex;align-items:center;gap:12px}
+.logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,#00e5ff,#7efcff);display:flex;align-items:center;justify-content:center;font-weight:800;color:#012}
+.toolbar{margin-left:auto;display:flex;gap:10px;align-items:center}
+.toolbar button{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:12px;color:var(--neon);cursor:pointer}
+.main{display:flex;gap:20px;flex:1}
+.playArea{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.grid{display:grid;grid-template-columns:repeat(3,120px);grid-gap:14px;padding:24px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent)}
+.hole{width:120px;height:120px;border-radius:12px;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer}
+.hole.active{background:linear-gradient(90deg,#00e5ff,#00ff9d);color:#012;transform:translateY(-6px)}
+.rightPanel{width:320px;display:flex;flex-direction:column;gap:12px}
+.panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+.scoreBubble{padding:10px 14px;border-radius:999px;background:linear-gradient(90deg,#00e5ff,#00ff9d);color:#012;font-weight:800}
+@media (max-width:900px){.grid{grid-template-columns:repeat(3,86px)}.hole{width:86px;height:86px}}
 </style>
 </head>
 <body>
-<h1>Whack-A-Mole</h1>
-<div class="score">Score: <span id="score">0</span></div>
-<div class="grid" id="grid"></div>
+<div class="container">
+  <div class="header">
+    <div style="display:flex;gap:12px;align-items:center"><div class="logo">PI</div><div><div style="font-size:20px;font-weight:800">Whack-A-Mole — Neon</div><div style="font-size:12px;color:rgba(255,255,255,0.7)">Whack the neon moles!</div></div></div>
+    <div class="toolbar"><button id="homeBtn">← Home</button><button id="themeBtn">🌙</button></div>
+  </div>
+  <div class="main">
+    <div class="playArea">
+      <div style="margin-bottom:12px"><span class="scoreBubble" id="score">Score: 0</span></div>
+      <div class="grid" id="grid"></div>
+      <div style="margin-top:12px"><button id="startBtn" style="padding:10px 12px;border-radius:10px;background:linear-gradient(90deg,#00e5ff,#00ff9d);border:none;color:#012;font-weight:800;cursor:pointer">Start</button></div>
+    </div>
+    <div class="rightPanel">
+      <div class="panel"><div class="small">Settings</div><div style="height:8px"></div><div class="small">Spawn Speed</div><input id="speedRange" type="range" min="400" max="1400" step="50" value="900" /></div>
+      <div class="panel"><div class="small">Leaderboard (session)</div><div id="log" style="margin-top:8px;max-height:200px;overflow:auto;font-size:13px;color:rgba(255,255,255,0.9)"></div></div>
+      <div class="panel small">About<br/>Pumkinpie Arcade — Whack-A-Mole Neon</div>
+    </div>
+  </div>
+</div>
 <script>
+// Whack-a-mole logic
 const grid = document.getElementById('grid');
-let score = 0;
-const holes = [];
-for(let i=0;i<9;i++){
-  const div = document.createElement('div');
-  div.className='hole';
-  grid.appendChild(div);
-  holes.push(div);
-}
-function mole(){
+const scoreEl = document.getElementById('score');
+const startBtn = document.getElementById('startBtn');
+const speedRange = document.getElementById('speedRange');
+const logW = document.querySelector('#log');
+let holes=[];let score=0;let moleTimer=null;let spawnSpeed=Number(speedRange.value);
+
+function buildGrid(){ grid.innerHTML=''; holes=[]; for(let i=0;i<9;i++){ const h=document.createElement('div'); h.className='hole'; h.dataset.index=i; h.addEventListener('click', ()=>{ if(h.classList.contains('active')){ score++; scoreEl.textContent='Score: '+score; h.classList.remove('active'); addLog('Hit! Score '+score); } }); grid.appendChild(h); holes.push(h);} }
+
+function addLog(t){ const d=document.createElement('div'); d.textContent=`[${new Date().toLocaleTimeString()}] ${t}`; logW.prepend(d); while(logW.children.length>40) logW.removeChild(logW.lastChild); }
+
+function spawn(){ // clear previous
   holes.forEach(h=>h.classList.remove('active'));
-  const index=Math.floor(Math.random()*holes.length);
-  holes[index].classList.add('active');
+  const idx=Math.floor(Math.random()*holes.length);
+  holes[idx].classList.add('active');
 }
-holes.forEach(h=>h.addEventListener('click',()=>{
-  if(h.classList.contains('active')){
-    score++;
-    document.getElementById('score').textContent=score;
-    h.classList.remove('active');
-  }
-}));
-setInterval(mole,1000);
+
+function startGame(){ if(moleTimer) clearInterval(moleTimer); score=0; scoreEl.textContent='Score: 0'; buildGrid(); spawn(); moleTimer=setInterval(spawn, spawnSpeed); addLog('Game started'); startBtn.textContent='Restart'; }
+function stopGame(){ if(moleTimer) clearInterval(moleTimer); moleTimer=null; addLog('Game stopped — score '+score); }
+
+speedRange.addEventListener('input', ()=>{ spawnSpeed=Number(speedRange.value); if(moleTimer){ clearInterval(moleTimer); moleTimer=setInterval(spawn, spawnSpeed); } });
+startBtn.addEventListener('click', ()=>{ startGame(); });
+document.getElementById('homeBtn').addEventListener('click', ()=> window.close());
+document.getElementById('themeBtn').addEventListener('click', ()=> document.body.classList.toggle('light-mode'));
+
+buildGrid();
 </script>
 </body>
 </html>
-
